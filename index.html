@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Clawdia is a multi-agent community intelligence system that sends BlueStacks a weekly competitor report and 7-day content calendar on Telegram.">
+<meta property="og:title" content="Clawdia">
+<meta property="og:description" content="5 AI agents. 8 platforms. 1 Monday report.">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Clawdia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: airy lavender landing page. Hero with agent mascot and floating agent tiles, competitor tile strip, staggered capability cards, outlined marquee, two-up "how it works", tech row, hackathon band. */
+:root{
+  --bg:#f4f5ff; --surface:#ffffff; --fg:#13142b; --muted:#5d6082; --line:#e1e3f7;
+  --accent:#5b4bf0; --accent2:#8b5cf6; --chip:#e9eafc; --warm:#ff9f43; --ink-on-accent:#ffffff;
+  --glow:rgba(91,75,240,.16);
+  --f-display:"Outfit","Trebuchet MS",sans-serif; --f-body:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0e20; --surface:#171834; --fg:#eceeff; --muted:#9b9dc7; --line:#2a2c55;
+    --accent:#8d80ff; --accent2:#b18cff; --chip:#22244b; --glow:rgba(141,128,255,.18); --ink-on-accent:#0d0e20; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d0e20; --surface:#171834; --fg:#eceeff; --muted:#9b9dc7; --line:#2a2c55;
+  --accent:#8d80ff; --accent2:#b18cff; --chip:#22244b; --glow:rgba(141,128,255,.18); --ink-on-accent:#0d0e20; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;padding-inline:0;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:var(--f-display);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.02em}
+p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1180px;margin-inline:auto;padding-inline:20px}
+.grad{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;padding:12px 22px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent2));color:var(--ink-on-accent);border:0;cursor:pointer}
+.btn.ghost{background:var(--chip);color:var(--fg)}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid transparent}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:800;font-size:22px}
+.logo svg{width:30px;height:30px}
+.links{display:flex;gap:28px;font-size:14px;font-weight:600;color:var(--muted)}
+.links a:hover{color:var(--accent)}
+@media (max-width:760px){.links{display:none}}
+
+/* hero */
+.hero{padding-block:48px 56px;position:relative}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:24px;align-items:center}
+.hero h1{font-size:clamp(38px,5.6vw,64px);font-weight:700;margin-block:14px 18px}
+.hero .sub{color:var(--muted);max-width:50ch;font-size:17px}
+.sched{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px;margin-top:28px;max-width:560px;box-shadow:0 10px 30px var(--glow)}
+.sched .cell{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:14px;font-weight:600;flex:1 1 150px;min-width:0}
+.sched .cell small{display:block;font-weight:500;color:var(--muted);font-size:12px;line-height:1.2}
+.sched .btn{flex:0 0 auto}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;align-items:center;font-size:13px;color:var(--muted)}
+.tag{background:var(--chip);color:var(--accent);padding:4px 12px;border-radius:8px;font-weight:600;font-size:12px}
+.stage{position:relative;min-height:400px;display:grid;place-items:center}
+.stage svg.bot{width:min(100%,430px);height:auto;position:relative;z-index:2}
+.stage .halo{position:absolute;inset:6% 4%;background:radial-gradient(closest-side,var(--glow),transparent);z-index:0}
+.chip-tile{position:absolute;width:68px;height:68px;border-radius:18px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;box-shadow:0 12px 28px var(--glow);z-index:3;animation:bob 6s ease-in-out infinite}
+.chip-tile svg{width:30px;height:30px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.t1{top:2%;left:8%}.t2{top:4%;right:4%;animation-delay:-2s}.t3{bottom:12%;left:2%;animation-delay:-4s}.t4{bottom:6%;right:8%;animation-delay:-1s}
+@keyframes bob{50%{transform:translateY(-10px)}}
+@media (max-width:860px){.hero .wrap{grid-template-columns:1fr}.stage{min-height:340px}}
+
+/* competitors */
+.strip-sec{padding-block:8px 24px}
+.strip-head{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.strip-head h2{font-size:22px}
+.strip-head p{color:var(--muted);font-size:14px}
+.strip{display:flex;gap:16px;overflow-x:auto;padding:4px 20px 18px;scroll-snap-type:x proximity;margin-inline:-20px}
+.comp{flex:0 0 190px;height:230px;border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;scroll-snap-align:start;position:relative;overflow:hidden}
+.comp::after{content:"";position:absolute;inset:auto -30% -40% auto;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.14)}
+.comp b{font-family:var(--f-display);font-size:30px;line-height:1;letter-spacing:-.02em}
+.comp span{font-size:12px;opacity:.85;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.c1{background:linear-gradient(160deg,#4f46e5,#22c1c3)}.c2{background:linear-gradient(160deg,#7c3aed,#f97316)}.c3{background:linear-gradient(160deg,#0f766e,#6366f1)}
+.c4{background:linear-gradient(160deg,#1e3a8a,#38bdf8)}.c5{background:linear-gradient(160deg,#111827,#6d28d9)}.c6{background:linear-gradient(160deg,#15803d,#0f172a)}
+
+/* what we do */
+.sec{padding-block:72px}
+.center{text-align:center;max-width:720px;margin-inline:auto}
+.center h2{font-size:clamp(30px,4.4vw,48px);font-weight:700;margin-block:12px 16px}
+.center p{color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px;padding-bottom:56px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:0 10px 30px var(--glow)}
+.card:nth-child(2){translate:0 -20px}.card:nth-child(3){translate:0 28px}.card:nth-child(4){translate:0 8px}
+.card .ico{width:56px;height:56px;border-radius:16px;background:var(--chip);display:grid;place-items:center}
+.card .ico svg{width:28px;height:28px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:19px;font-weight:600}
+.card p{color:var(--muted);font-size:14px}
+.card .n{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:var(--chip);padding:3px 10px;border-radius:99px}
+@media (max-width:980px){.cards{grid-template-columns:repeat(2,1fr)}.card:nth-child(n){translate:none}.cards{padding-bottom:0}}
+@media (max-width:560px){.cards{grid-template-columns:1fr}}
+
+/* marquee */
+.marquee{overflow:hidden;padding-block:20px;border-block:1px solid var(--line)}
+.track{display:flex;gap:28px;width:max-content;animation:slide 38s linear infinite;align-items:center}
+.track span{font-family:var(--f-display);font-weight:700;font-size:clamp(36px,6vw,64px);color:transparent;-webkit-text-stroke:1.5px var(--accent);white-space:nowrap;letter-spacing:-.01em}
+.track i{font-style:normal;color:var(--accent);font-size:28px}
+@keyframes slide{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.track,.chip-tile{animation:none}}
+
+/* how */
+.how .wrap{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.collage{position:relative;min-height:440px}
+.doc{position:absolute;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 18px 40px var(--glow)}
+.doc.a{left:0;top:30px;width:min(300px,78%);z-index:2}
+.doc.b{right:0;top:0;width:min(280px,72%);transform:rotate(3deg);background:linear-gradient(180deg,var(--surface),var(--chip))}
+.doc.b{top:140px}
+.doc h4{font-family:var(--f-display);font-size:14px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.doc h4 em{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:var(--f-body);font-weight:700}
+.sk{height:8px;border-radius:99px;background:var(--line);margin-bottom:8px}
+.sec-label{font-size:11px;font-weight:700;color:var(--accent);margin:12px 0 6px;letter-spacing:.06em;text-transform:uppercase}
+.day{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12px;font-weight:700}
+.day b{width:34px;color:var(--accent)}
+.day .sk{flex:1;margin:0}
+.day .pf{font-size:10px;background:var(--chip);color:var(--muted);padding:2px 8px;border-radius:6px;font-weight:600}
+.how h2{font-size:clamp(30px,4vw,44px);font-weight:700;margin-block:12px 28px}
+.step{display:grid;grid-template-columns:40px 1fr;gap:14px;padding-block:16px;border-top:1px solid var(--line)}
+.step .dot{width:40px;height:40px;border-radius:12px;background:var(--chip);color:var(--accent);display:grid;place-items:center;font-family:var(--f-display);font-weight:700}
+.step h3{font-size:18px;font-weight:600;margin-bottom:4px}
+.step p{color:var(--muted);font-size:14.5px}
+@media (max-width:900px){.how .wrap{grid-template-columns:1fr;gap:32px}.collage{min-height:460px}}
+
+/* tech */
+.tech{padding-block:36px;border-block:1px solid var(--line);margin-top:24px}
+.tech .wrap{display:flex;flex-wrap:wrap;gap:12px 40px;align-items:center;justify-content:center}
+.tech .lead{font-size:13px;color:var(--muted);font-weight:600}
+.tech span.t{font-family:var(--f-display);font-weight:600;font-size:18px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.tech span.t:before{content:"";width:10px;height:10px;border-radius:3px;background:linear-gradient(135deg,var(--accent),var(--accent2))}
+
+/* hackathon */
+.win{position:relative;padding-block:96px 84px;overflow:hidden;text-align:center}
+.win .ghost{position:absolute;left:0;right:0;top:8px;text-align:center;font-family:var(--f-display);font-weight:800;font-size:clamp(70px,17vw,220px);letter-spacing:-.04em;color:var(--chip);line-height:1;white-space:nowrap;z-index:0;user-select:none}
+.win .wrap{position:relative;z-index:1}
+.win h2{font-size:clamp(30px,4.4vw,48px);font-weight:700;margin-block:12px 16px}
+.facts{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:28px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 20px;text-align:left;min-width:170px}
+.fact small{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fact b{font-family:var(--f-display);font-size:18px;font-weight:600}
+/* interaction */
+.actions{display:flex;align-items:center;gap:10px}
+.theme,.arr{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;display:grid;place-items:center;font:inherit;font-size:18px;transition:border-color .2s,color .2s,transform .2s}
+.theme:hover,.arr:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+.arrows{display:flex;gap:8px}
+.links a{position:relative;padding-block:4px;transition:color .2s}
+.links a::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transform:scaleX(0);transform-origin:left;transition:transform .25s}
+.links a:hover::after,.links a.on::after{transform:scaleX(1)}
+.links a.on{color:var(--accent)}
+.btn{transition:transform .2s,box-shadow .2s,filter .2s;font-family:inherit}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px var(--glow);filter:brightness(1.07)}
+.btn:active{transform:translateY(0)}
+.card,.node,.fact,.comp,.doc{transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease}
+.card,.fact{position:relative}
+.card::before,.node::before,.fact::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(220px circle at var(--mx,50%) var(--my,50%),var(--glow),transparent 70%);opacity:0;transition:opacity .25s;pointer-events:none}
+.card:hover::before,.node:hover::before,.fact:hover::before{opacity:1}
+.card:hover{transform:translateY(-8px);border-color:var(--accent);box-shadow:0 22px 44px var(--glow)}
+.card .ico{transition:transform .3s,background .3s}
+.card:hover .ico{transform:rotate(-8deg) scale(1.1);background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.card:hover .ico svg{stroke:var(--ink-on-accent)}
+.fact:hover{transform:translateY(-4px);border-color:var(--accent)}
+.comp{cursor:grab;user-select:none}
+.comp:hover{transform:translateY(-8px) rotate(-1.2deg);box-shadow:0 20px 36px var(--glow)}
+.comp::after{transition:transform .5s ease}
+.comp:hover::after{transform:scale(1.5)}
+.strip{scroll-behavior:smooth;scrollbar-width:thin}
+.strip.drag{scroll-behavior:auto;scroll-snap-type:none}
+.strip.drag .comp{cursor:grabbing}
+.chip-tile{cursor:pointer;padding:0;color:inherit;transition:border-color .2s,scale .2s,box-shadow .2s}
+.chip-tile:hover{scale:1.14;border-color:var(--accent);box-shadow:0 16px 32px var(--glow)}
+.bot .claw{transform-origin:262px 270px}
+.stage:hover .bot .claw{animation:wave .9s ease-in-out 2}
+@keyframes wave{0%,100%{transform:rotate(0)}30%{transform:rotate(-14deg)}65%{transform:rotate(9deg)}}
+.pupils{transition:transform .12s ease-out}
+.marquee:hover .track{animation-play-state:paused}
+.track span{transition:color .25s}
+.track span:hover{color:var(--accent)}
+.doc:hover{z-index:4}
+.doc.a:hover{transform:translateY(-8px) rotate(-1.5deg)}
+.doc.b:hover{transform:translateY(-8px) rotate(1deg)}
+.day{border-radius:8px;padding:2px 4px;margin-inline:-4px;transition:background .2s}
+.day:hover{background:var(--chip)}
+.day:hover .sk{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.step{transition:padding-left .25s,border-color .25s}
+.step:hover{padding-left:10px;border-color:var(--accent)}
+.step .dot{transition:background .25s,color .25s,transform .25s}
+.step:hover .dot{background:var(--accent);color:var(--ink-on-accent);transform:scale(1.08)}
+.tech span.t{transition:color .2s,transform .2s}
+.tech span.t:hover{color:var(--fg);transform:translateY(-3px)}
+.node{font:inherit;color:var(--fg);cursor:pointer;overflow:hidden}
+.node:hover{transform:translateY(-5px);border-color:var(--accent)}
+.node[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 14px 30px var(--glow);background:linear-gradient(180deg,var(--surface),var(--chip))}
+.node small{margin-bottom:4px}
+.detail{display:flex;flex-wrap:wrap;gap:20px 40px;align-items:center;justify-content:space-between;margin-top:20px;padding:22px 24px;border-radius:18px;background:var(--surface);border:1px solid var(--accent)}
+.detail > div{min-width:0;flex:1 1 280px}
+.detail .out{flex:0 1 300px;border-left:2px solid var(--line);padding-left:20px}
+.detail small{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.detail h3{font-size:22px;font-weight:600;margin-bottom:6px}
+.detail p{color:var(--muted);font-size:15px}
+.detail .out b{font-family:var(--f-display);font-weight:600;font-size:16px}
+.detail.pop{animation:pop .35s ease}
+@keyframes pop{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+.repo .acts{display:flex;flex-wrap:wrap;gap:10px}
+.repo .btn{border:0;font-size:15px}
+@media (max-width:900px){.detail .out{border-left:0;padding-left:0}}
+@media (prefers-reduced-motion:reduce){.card,.node,.fact,.comp,.doc,.btn,.step,.chip-tile{transition:none}.stage:hover .bot .claw,.detail.pop{animation:none}.strip{scroll-behavior:auto}}
+/* under the hood */
+.pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;margin-top:40px}
+.node{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 14px;text-align:center;position:relative}
+.node small{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.node b{font-family:var(--f-display);font-size:16px;font-weight:600}
+.repo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;margin-top:28px;padding:24px;border-radius:18px;background:linear-gradient(120deg,var(--accent),var(--accent2));color:var(--ink-on-accent)}
+.repo h3{font-size:22px;font-weight:600;margin-bottom:6px}
+.repo p{font-size:14.5px;opacity:.9;max-width:62ch}
+.repo code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:rgba(255,255,255,.18);padding:2px 7px;border-radius:6px}
+.repo .btn{background:var(--surface);color:var(--accent)}
+.repo > div{min-width:0;flex:1 1 320px}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px 24px;margin-top:28px}
+.sheet .row{display:grid;grid-template-columns:200px 1fr;gap:16px;padding-block:14px;border-top:1px solid var(--line);font-size:15px}
+.sheet .row:first-child{border-top:0}
+.sheet dt{font-weight:700;color:var(--muted);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.sheet dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.tl{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.tl .ev{border-top:2px solid var(--line);padding-top:18px;position:relative}
+.tl .ev::before{content:"";position:absolute;top:-7px;left:0;width:12px;height:12px;border-radius:50%;background:var(--accent)}
+.tl .ev small{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.tl .ev h3{font-size:19px;font-weight:600;margin-block:6px}
+.tl .ev p{color:var(--muted);font-size:14.5px}
+@media (max-width:900px){
+  .pipe{grid-template-columns:1fr 1fr;gap:14px}
+  .sheet .row{grid-template-columns:1fr;gap:4px}
+  .tl{grid-template-columns:1fr}
+}
+footer{border-top:1px solid var(--line);padding-block:28px;font-size:13px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="Clawdia home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b4bf0"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M11 24c-3-3-3-8 0-12M16 25c-4-4-4-11 0-15M21 24c-3-4-3-9 0-13" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>
+      Clawdia
+    </a>
+    <nav class="links" aria-label="Sections">
+      <a href="#agents">Agents</a><a href="#how">How it works</a><a href="#hood">Under the hood</a><a href="#hackathon">Hackathon</a>
+    </nav>
+    <div class="actions">
+      <button type="button" class="theme" id="theme" aria-label="Switch between light and dark theme"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg></button>
+      <a class="btn" href="https://github.com/Umang1617/clawdia" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Community intelligence for BlueStacks</div>
+      <h1>Five AI agents read the market, <span class="grad">so Monday starts with a plan</span></h1>
+      <p class="sub">Clawdia tracks LDPlayer, NoxPlayer, MEmu, Steam, Epic Games and Xbox across Reddit and gaming and AI subreddits, then sends a weekly report and a 7-day content calendar to Telegram.</p>
+      <div class="sched" role="group" aria-label="Report schedule">
+        <div class="cell"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--accent);flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Every Monday<small>07:00 IST</small></span></div>
+        <div class="cell"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--accent);flex:none"><path d="M21 4 3 11l7 2.5L12.5 21 21 4z"/><path d="m10 13.5 5-4.5"/></svg><span>Telegram<small>Report + calendar</small></span></div>
+        <a class="btn" href="#how">See the report</a>
+      </div>
+      <div class="tags"><span>Agents:</span><span class="tag">Competitor Monitor</span><span class="tag">Sentiment Analyst</span><span class="tag">Trend Spotter</span></div>
+      <div style="margin-top:20px"><a class="btn ghost" href="https://github.com/Umang1617/clawdia" target="_blank" rel="noopener">View the repo on GitHub</a></div>
+    </div>
+
+    <div class="stage">
+      <div class="halo" aria-hidden="true"></div>
+      <button type="button" class="chip-tile t1" data-k="monitor" aria-label="Show the Competitor Monitor agent"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button type="button" class="chip-tile t2" data-k="sentiment" aria-label="Show the Sentiment Analyst agent"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></button>
+      <button type="button" class="chip-tile t3" data-k="trend" aria-label="Show the Trend Spotter agent"><svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/></svg></button>
+      <button type="button" class="chip-tile t4" data-k="strategist" aria-label="Show the Content Strategist agent"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg></button>
+      <svg class="bot" viewBox="0 0 420 400" aria-hidden="true">
+        <defs>
+          <linearGradient id="hd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9dcff"/></linearGradient>
+          <linearGradient id="vz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b3fb8"/><stop offset="1" stop-color="#1c1d5e"/></linearGradient>
+          <linearGradient id="pd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#5b4bf0"/></linearGradient>
+        </defs>
+        <ellipse cx="210" cy="372" rx="90" ry="12" fill="#5b4bf0" opacity=".14"/>
+        <path d="M150 300c0-34 26-56 60-56s60 22 60 56v52c0 12-10 20-22 20h-76c-12 0-22-8-22-20z" fill="url(#hd)" stroke="#c9ccf5" stroke-width="2"/>
+        <rect x="186" y="286" width="48" height="36" rx="12" fill="url(#pd)" opacity=".9"/>
+        <g class="claw"><path d="M262 270c34-14 60-42 76-92" stroke="#ff9f43" stroke-width="22" stroke-linecap="round" fill="none"/>
+        <path d="M338 178c-8-22-6-40 6-62M338 178c16-14 34-34 38-58" stroke="#ff9f43" stroke-width="17" stroke-linecap="round" fill="none"/></g>
+        <path d="M156 290c-26 6-44 22-50 48" stroke="#d9dcff" stroke-width="20" stroke-linecap="round" fill="none"/>
+        <line x1="210" y1="82" x2="210" y2="56" stroke="#8b5cf6" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="210" cy="50" r="10" fill="#ff9f43"/>
+        <circle cx="116" cy="170" r="20" fill="url(#pd)"/><circle cx="304" cy="170" r="20" fill="url(#pd)"/>
+        <rect x="124" y="82" width="172" height="160" rx="70" fill="url(#hd)" stroke="#c9ccf5" stroke-width="2"/>
+        <rect x="146" y="124" width="128" height="76" rx="38" fill="url(#vz)"/>
+        <g class="pupils"><circle cx="186" cy="160" r="11" fill="#7ee7ff"/><circle cx="234" cy="160" r="11" fill="#7ee7ff"/>
+        <circle cx="189" cy="157" r="3.5" fill="#fff"/><circle cx="237" cy="157" r="3.5" fill="#fff"/></g>
+        <path d="M196 184c8 6 20 6 28 0" stroke="#7ee7ff" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+  </div>
+  <div class="wrap" style="display:block;margin-top:28px">
+    <div class="facts" style="margin-top:0;justify-content:flex-start">
+      <div class="fact"><small>Agents</small><b>5</b></div>
+      <div class="fact"><small>Platforms</small><b>8</b></div>
+      <div class="fact"><small>Report</small><b>1 every Monday</b></div>
+    </div>
+  </div>
+</section>
+
+<section class="strip-sec">
+  <div class="wrap">
+    <div class="strip-head">
+      <h2>Six competitors, watched every week</h2>
+      <div class="arrows"><button type="button" class="arr" id="prev" aria-label="Scroll competitors left">←</button><button type="button" class="arr" id="next" aria-label="Scroll competitors right">→</button></div>
+    </div>
+    <div class="strip" tabindex="0" aria-label="Monitored competitors">
+      <div class="comp c1"><span>Emulator</span><b>LDPlayer</b></div>
+      <div class="comp c2"><span>Emulator</span><b>NoxPlayer</b></div>
+      <div class="comp c3"><span>Emulator</span><b>MEmu</b></div>
+      <div class="comp c4"><span>PC store</span><b>Steam</b></div>
+      <div class="comp c5"><span>PC store</span><b>Epic Games</b></div>
+      <div class="comp c6"><span>Console</span><b>Xbox</b></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="agents">
+  <div class="wrap">
+    <div class="center">
+      <div class="eyebrow">What Clawdia does</div>
+      <h2>Turn community noise into a <span class="grad">weekly plan</span></h2>
+      <p>Four agents do the reading and thinking. A fifth delivers the result where your team already chats.</p>
+    </div>
+    <div class="cards">
+      <article class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div><span class="n">Agent 1</span><h3>Competitor Monitor</h3><p>Follows what the six competitors announce, change and get praised or blamed for.</p></article>
+      <article class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div><span class="n">Agent 2</span><h3>Sentiment Analyst</h3><p>Reads community threads and tracks how players feel about BlueStacks and its rivals.</p></article>
+      <article class="card"><div class="ico"><svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-9"/><path d="M15 6h6v6"/></svg></div><span class="n">Agent 3</span><h3>Trend Spotter</h3><p>Picks up topics rising across gaming and AI subreddits before they peak.</p></article>
+      <article class="card"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18M8 15h4"/></svg></div><span class="n">Agent 4</span><h3>Content Strategist</h3><p>Turns the findings into a 7-day content calendar, written with nine bundled reference skills.</p></article>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="track">
+    <span>Competitor Intel</span><i>✦</i><span>Sentiment</span><i>✦</i><span>Trend Spotting</span><i>✦</i><span>Content Calendar</span><i>✦</i><span>Monday Report</span><i>✦</i>
+    <span>Competitor Intel</span><i>✦</i><span>Sentiment</span><i>✦</i><span>Trend Spotting</span><i>✦</i><span>Content Calendar</span><i>✦</i><span>Monday Report</span><i>✦</i>
+  </div>
+</div>
+
+<section class="sec how" id="how">
+  <div class="wrap">
+    <div class="collage" aria-label="Sample layout of the weekly report and content calendar">
+      <div class="doc a">
+        <h4>Weekly report <em>Sample layout</em></h4>
+        <div class="sec-label">Competitor moves</div><div class="sk" style="width:94%"></div><div class="sk" style="width:76%"></div>
+        <div class="sec-label">Sentiment shift</div><div class="sk" style="width:88%"></div><div class="sk" style="width:60%"></div>
+        <div class="sec-label">Trending topics</div><div class="sk" style="width:80%"></div><div class="sk" style="width:90%"></div><div class="sk" style="width:48%"></div>
+      </div>
+      <div class="doc b">
+        <h4>7-day calendar <em>Sample layout</em></h4>
+        <div class="day"><b>Mon</b><div class="sk"></div><span class="pf">Reddit</span></div>
+        <div class="day"><b>Tue</b><div class="sk"></div><span class="pf">X</span></div>
+        <div class="day"><b>Wed</b><div class="sk"></div><span class="pf">Instagram</span></div>
+        <div class="day"><b>Thu</b><div class="sk"></div><span class="pf">YouTube</span></div>
+        <div class="day"><b>Fri</b><div class="sk"></div><span class="pf">Discord</span></div>
+        <div class="day"><b>Sat</b><div class="sk"></div><span class="pf">Facebook</span></div>
+        <div class="day"><b>Sun</b><div class="sk"></div><span class="pf">Reddit</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="eyebrow">How it works</div>
+      <h2>From scattered threads to <span class="grad">one Telegram message</span></h2>
+      <div class="step"><div class="dot">1</div><div><h3>Collect</h3><p>Clawdia browses Reddit and gaming and AI subreddits with Apify's RAG Browser and gathers the week's posts about each competitor.</p></div></div>
+      <div class="step"><div class="dot">2</div><div><h3>Analyze</h3><p>The Competitor Monitor, Sentiment Analyst and Trend Spotter hand their findings to the Content Strategist, which runs on Claude Sonnet.</p></div></div>
+      <div class="step"><div class="dot">3</div><div><h3>Deliver</h3><p>The Delivery Agent sends the report and the 7-day content calendar to Telegram every Monday at 07:00 IST.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="hood" style="padding-bottom:24px">
+  <div class="wrap">
+    <div class="center">
+      <div class="eyebrow">Under the hood</div>
+      <h2>One skill, <span class="grad">five parallel agents</span></h2>
+      <p>Clawdia ships as an OpenClaw skill. The agents run in parallel and their findings come together in one weekly report.</p>
+    </div>
+    <div class="pipe">
+      <button type="button" class="node" data-k="monitor" aria-pressed="true"><small>Reads</small><b>Competitor Monitor</b></button>
+      <button type="button" class="node" data-k="sentiment" aria-pressed="false"><small>Scores</small><b>Sentiment Analyst</b></button>
+      <button type="button" class="node" data-k="trend" aria-pressed="false"><small>Spots</small><b>Trend Spotter</b></button>
+      <button type="button" class="node" data-k="strategist" aria-pressed="false"><small>Writes</small><b>Content Strategist</b></button>
+      <button type="button" class="node" data-k="delivery" aria-pressed="false"><small>Sends</small><b>Delivery Agent</b></button>
+    </div>
+    <div class="detail" aria-live="polite">
+      <div><small id="d-tag">Agent 1 of 5</small><h3 id="d-title">Competitor Monitor</h3><p id="d-text">Tracks what LDPlayer, NoxPlayer, MEmu, Steam, Epic Games and Xbox are doing, and what players say about them.</p></div>
+      <div class="out"><small>Feeds</small><b id="d-out">The competitor section of the weekly report</b></div>
+    </div>
+    <dl class="sheet">
+      <div class="row"><dt>Skill name</dt><dd>bluestacks-community-intelligence v2.0.0</dd></div>
+      <div class="row"><dt>Schedule</dt><dd>Every Monday at 07:00 IST</dd></div>
+      <div class="row"><dt>Monitors</dt><dd>LDPlayer, NoxPlayer, MEmu, Steam, Epic Games and Xbox, across Reddit and gaming and AI subreddits</dd></div>
+      <div class="row"><dt>Sources</dt><dd>Reddit, YouTube, Instagram, X, Google Trends and app store reviews</dd></div>
+      <div class="row"><dt>Delivers</dt><dd>A weekly report and a 7-day content calendar with hooks, CTAs and posting times, split to fit Telegram's message limits</dd></div>
+      <div class="row"><dt>Built on</dt><dd>OpenClaw, Node.js, Anthropic Claude Sonnet and the Apify RAG Web Browser, which reads JavaScript-rendered pages in full</dd></div>
+      <div class="row"><dt>Run cost</dt><dd>About $0.10 to $0.25 per weekly run on Apify's free tier</dd></div>
+      <div class="row"><dt>Writing support</dt><dd>Nine bundled writing and marketing reference skills guide the content calendar</dd></div>
+    </dl>
+    <div class="repo">
+      <div>
+        <h3>Run Clawdia yourself</h3>
+        <p>Install OpenClaw, add the skill, fill in your <code>.env</code> with API tokens, check Telegram with <code id="cmd">node scripts/test-telegram.js</code>, then schedule it with PM2 cron.</p>
+      </div>
+      <div class="acts">
+        <button type="button" class="btn" id="copy">Copy test command</button>
+        <a class="btn" href="https://github.com/Umang1617/clawdia" target="_blank" rel="noopener">Open on GitHub</a>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="ev"><small>The start</small><h3>BlueClaw</h3><p>Clawdia began as BlueClaw, a hackathon submission built for the BlueStacks community team.</p></div>
+      <div class="ev"><small>March 18, 2026</small><h3>Submitted to OpenClaw</h3><p>Entered in Track 1, Build &amp; Create, as the skill bluestacks-community-intelligence v2.0.0.</p></div>
+      <div class="ev"><small>The result</small><h3>2nd place</h3><p>It placed second at the OpenClaw Hackathon 2026 and now sends weekly reports and content calendars to Telegram.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="tech" id="stack">
+  <div class="wrap">
+    <span class="lead">Built with</span>
+    <span class="t">OpenClaw</span><span class="t">Node.js</span><span class="t">Claude Sonnet</span><span class="t">Apify RAG Browser</span><span class="t">Telegram</span>
+  </div>
+</section>
+
+<section class="win" id="hackathon">
+  <div class="ghost" aria-hidden="true">HACKATHON</div>
+  <div class="wrap">
+    <div class="eyebrow">Recognition</div>
+    <h2>2nd place at the <span class="grad">OpenClaw Hackathon 2026</span></h2>
+    <p style="color:var(--muted);max-width:56ch;margin-inline:auto">Clawdia started as BlueClaw, a hackathon submission, and grew into the weekly intelligence system the BlueStacks community team runs on.</p>
+    <div class="facts">
+      <div class="fact"><small>Track</small><b>Build &amp; Create</b></div>
+      <div class="fact"><small>Submitted</small><b>March 18, 2026</b></div>
+      <div class="fact"><small>Skill</small><b>bluestacks-community-intelligence v2.0.0</b></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Project Clawdia, built by the BlueStacks Community team.</span>
+    <span><a href="https://github.com/Umang1617/clawdia" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">github.com/Umang1617/clawdia</a> · 5 AI agents · 8 platforms · 1 Monday report</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* theme toggle */
+  var themeBtn=document.getElementById("theme");
+  function isDark(){
+    var t=root.getAttribute("data-theme");
+    if(t) return t==="dark";
+    return window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  themeBtn.addEventListener("click",function(){ root.setAttribute("data-theme",isDark()?"light":"dark"); });
+
+  /* agent explorer */
+  var AGENTS={
+    monitor:{n:1,t:"Competitor Monitor",d:"Tracks what LDPlayer, NoxPlayer, MEmu, Steam, Epic Games and Xbox are doing, and what players say about them.",o:"The competitor section of the weekly report"},
+    sentiment:{n:2,t:"Sentiment Analyst",d:"Reads community conversation to gauge how players feel about BlueStacks and its competitors.",o:"The sentiment section of the weekly report"},
+    trend:{n:3,t:"Trend Spotter",d:"Picks up topics that are rising across gaming and AI communities, including Google Trends signals.",o:"The trending topics section of the weekly report"},
+    strategist:{n:4,t:"Content Strategist",d:"Turns the week's findings into a 7-day content calendar, guided by nine bundled writing skills such as copywriting, humanizing and SEO.",o:"A 7-day calendar with hooks, CTAs and posting times"},
+    delivery:{n:5,t:"Delivery Agent",d:"Sends the finished report to Telegram every Monday at 07:00 IST, split across messages to fit Telegram's limits.",o:"One Telegram report in your chat"}
+  };
+  var nodes=[].slice.call(document.querySelectorAll(".node"));
+  var panel=document.querySelector(".detail");
+  function pick(k){
+    var a=AGENTS[k]; if(!a) return;
+    nodes.forEach(function(n){ n.setAttribute("aria-pressed",n.getAttribute("data-k")===k?"true":"false"); });
+    document.getElementById("d-tag").textContent="Agent "+a.n+" of 5";
+    document.getElementById("d-title").textContent=a.t;
+    document.getElementById("d-text").textContent=a.d;
+    document.getElementById("d-out").textContent=a.o;
+    panel.classList.remove("pop"); void panel.offsetWidth; panel.classList.add("pop");
+  }
+  nodes.forEach(function(n){ n.addEventListener("click",function(){ pick(n.getAttribute("data-k")); }); });
+  [].forEach.call(document.querySelectorAll(".chip-tile"),function(t){
+    t.addEventListener("click",function(){
+      pick(t.getAttribute("data-k"));
+      var target=document.getElementById("hood");
+      if(target) target.scrollIntoView({behavior:reduce?"auto":"smooth",block:"start"});
+    });
+  });
+
+  /* cursor glow on cards */
+  [].forEach.call(document.querySelectorAll(".card,.node,.fact"),function(el){
+    el.addEventListener("pointermove",function(e){
+      var r=el.getBoundingClientRect();
+      el.style.setProperty("--mx",(e.clientX-r.left)+"px");
+      el.style.setProperty("--my",(e.clientY-r.top)+"px");
+    });
+  });
+
+  /* mascot eyes follow the pointer */
+  var bot=document.querySelector(".bot"), pupils=document.querySelector(".pupils");
+  if(bot&&pupils&&!reduce){
+    window.addEventListener("pointermove",function(e){
+      var r=bot.getBoundingClientRect();
+      var cx=r.left+r.width*0.5, cy=r.top+r.height*0.4;
+      var dx=e.clientX-cx, dy=e.clientY-cy;
+      var d=Math.sqrt(dx*dx+dy*dy)||1;
+      var m=Math.min(7,d/40);
+      pupils.setAttribute("transform","translate("+(dx/d*m).toFixed(1)+" "+(dy/d*m*0.7).toFixed(1)+")");
+    });
+  }
+
+  /* competitor strip: arrows and drag to scroll */
+  var strip=document.querySelector(".strip");
+  document.getElementById("prev").addEventListener("click",function(){ strip.scrollBy({left:-420,behavior:"smooth"}); });
+  document.getElementById("next").addEventListener("click",function(){ strip.scrollBy({left:420,behavior:"smooth"}); });
+  var down=false,sx=0,sl=0;
+  strip.addEventListener("pointerdown",function(e){ if(e.pointerType!=="mouse") return; down=true; sx=e.clientX; sl=strip.scrollLeft; strip.classList.add("drag"); });
+  window.addEventListener("pointermove",function(e){ if(down) strip.scrollLeft=sl-(e.clientX-sx); });
+  window.addEventListener("pointerup",function(){ down=false; strip.classList.remove("drag"); });
+
+  /* copy command */
+  var copy=document.getElementById("copy"), cmd=document.getElementById("cmd");
+  copy.addEventListener("click",function(){
+    function done(){ copy.textContent="Copied"; setTimeout(function(){ copy.textContent="Copy test command"; },1800); }
+    function select(){
+      var r=document.createRange(); r.selectNodeContents(cmd);
+      var s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      copy.textContent="Press Ctrl+C to copy"; setTimeout(function(){ copy.textContent="Copy test command"; },2600);
+    }
+    try{
+      navigator.clipboard.writeText(cmd.textContent).then(done,select);
+    }catch(err){ select(); }
+  });
+
+  /* active nav link */
+  var links={}; [].forEach.call(document.querySelectorAll(".links a"),function(a){ links[a.getAttribute("href").slice(1)]=a; });
+  if("IntersectionObserver" in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){
+          Object.keys(links).forEach(function(k){ links[k].classList.toggle("on",k===en.target.id); });
+        }
+      });
+    },{rootMargin:"-40% 0px -55% 0px"});
+    Object.keys(links).forEach(function(k){ var s=document.getElementById(k); if(s) io.observe(s); });
+  }
+})();
+</script>
+
+</body>
+</html>
